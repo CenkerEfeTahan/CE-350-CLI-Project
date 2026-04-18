@@ -5,10 +5,22 @@ if [ -z "$ASK_API_URL" ] || [ -z "$ASK_MODEL" ] || [ -z "$ASK_API_KEY" ]; then
   exit 1
 fi
 
-user_prompt="$*"
+piped_data=""
+if [ ! -t 0 ]; then
+  piped_data="$(cat)"
+fi
 
-if [ -z "$user_prompt" ]; then
+args_prompt="$@"
+
+if [ -n "$args_prompt" ] && [ -n "$piped_data" ]; then
+  user_prompt="${args_prompt}"$'\n'"${piped_data}"
+elif [ -n "$args_prompt" ]; then
+  user_prompt="$args_prompt"
+elif [ -n "$piped_data" ]; then
+  user_prompt="$piped_data"
+else
   echo "Usage: ask <prompt>" >&2
+  echo "Example: echo 'hello' | ask" >&2
   exit 1
 fi
 
@@ -22,5 +34,15 @@ response=$(curl -s -X POST "$ASK_API_URL" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $ASK_API_KEY" \
   -d "$payload")
+
+if [ $? -ne 0 ]; then
+  echo "Error: Failed to reach API at $ASK_API_URL" >&2
+  exit 1
+fi
+
+if echo "$response" | jq -e '.error' > /dev/null 2>&1; then
+  echo "API Error: $(echo "$response" | jq -r '.error.message')" >&2
+  exit 1
+fi
 
 echo "$response" | jq -r '.choices[0].message.content'
