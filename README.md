@@ -46,7 +46,7 @@ echo "system load information" | ask "Summarize and explain this output:"
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/ask.git
+git clone "https://github.com/CenkerEfeTahan/CE-350-CLI-Project.git"
 chmod +x ask/ask
 sudo cp ask/ask /usr/local/bin/ask
 ```
